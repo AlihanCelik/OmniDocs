@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniDocs AI — Enterprise Neural RAG Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Bar / App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">OmniDocs <span class="badge-pro">STUDIO</span></div>
+          <div class="brand-sub">Privacy-First Neural RAG & Document Intelligence</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="tab-chat" id="btn-tab-chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Asistan & Soru-Cevap</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-upload" id="btn-tab-upload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <span>PDF Yükle & Bölümle</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-search" id="btn-tab-search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span>Vektör & Parça Gezgini</span>
+        </button>
+      </nav>
+
+      <!-- System Health Indicator -->
+      <div class="system-status-pills">
+        <div class="status-pill" id="pill-qdrant" title="Vektör Veritabanı Port: 6333">
+          <span class="status-dot online"></span>
+          <span class="status-name">Qdrant</span>
+        </div>
+        <div class="status-pill" id="pill-ollama" title="Yerel LLM (Llama 3.2)">
+          <span class="status-dot online"></span>
+          <span class="status-name">Llama 3.2</span>
+        </div>
+        <div class="status-pill" id="pill-cross" title="Cross-Encoder Reranker">
+          <span class="status-dot online"></span>
+          <span class="status-name">ReRanker</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="app-body">
+      <!-- Left Sidebar: Section / Department & Document Shelf -->
+      <aside class="sidebar">
+        <!-- Section Filter Selector -->
+        <div class="sidebar-section">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>İstenilen Bölüm / Tenant</span>
+            </div>
+            <button class="icon-btn-subtle" id="btn-add-section-modal" title="Yeni Bölüm Ekle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="department-list" id="department-list">
+            <!-- Dynamically populated or default options -->
+            <button class="dept-chip active" data-dept="all">
+              <span class="dept-dot dot-all"></span>
+              <span class="dept-label">Tüm Dokümanlar</span>
+              <span class="dept-count" id="count-all">0</span>
+            </button>
+            <button class="dept-chip" data-dept="company_test">
+              <span class="dept-dot dot-cyan"></span>
+              <span class="dept-label">Genel Kurumsal</span>
+              <span class="dept-count" id="count-company_test">10</span>
+            </button>
+            <button class="dept-chip" data-dept="hukuk">
+              <span class="dept-dot dot-purple"></span>
+              <span class="dept-label">Hukuk & Mevzuat</span>
+              <span class="dept-count" id="count-hukuk">0</span>
+            </button>
+            <button class="dept-chip" data-dept="finans">
+              <span class="dept-dot dot-green"></span>
+              <span class="dept-label">Finans & Raporlar</span>
+              <span class="dept-count" id="count-finans">0</span>
+            </button>
+            <button class="dept-chip" data-dept="arge">
+              <span class="dept-dot dot-amber"></span>
+              <span class="dept-label">Ar-Ge & Teknik</span>
+              <span class="dept-count" id="count-arge">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Shelf: Indexed Documents -->
+        <div class="sidebar-section flex-1">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>İndekslenen Belgeler</span>
+            </div>
+            <button class="icon-btn-subtle" id="btn-refresh-docs" title="Yenile">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="document-shelf" id="document-shelf">
+            <!-- Document items dynamically loaded -->
+            <div class="shelf-loading">
+              <div class="spinner-small"></div>
+              <span>Dokümanlar listeleniyor...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vector DB Stats Footer -->
+        <div class="sidebar-footer">
+          <div class="stat-card">
+            <div class="stat-meta">
+              <span class="stat-title">Toplam İndeks Parçası</span>
+              <span class="stat-val" id="total-chunks-stat">0</span>
+            </div>
+            <div class="stat-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <main class="content-view">
+        <!-- ==================== TAB 1: ASİSTAN & SORU-CEVAP ==================== -->
+        <section class="tab-pane active" id="tab-chat">
+          <div class="chat-container">
+            <!-- Active Filter Banner -->
+            <div class="chat-filter-bar">
+              <div class="active-filter-indicator">
+                <span class="filter-tag">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                  Odak Bölüm: <strong id="current-filter-name">Tüm Dokümanlar</strong>
+                </span>
+                <span class="filter-tip">Cross-Encoder & Ollama Yalnızca Seçili Bölümü Taramaktadır</span>
+              </div>
+              <div class="chat-actions">
+                <button class="btn-ghost-sm" id="btn-clear-chat" title="Sohbeti Temizle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  Temizle
+                </button>
+              </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="messages-viewport" id="messages-viewport">
+              <!-- Welcome State -->
+              <div class="welcome-card" id="welcome-message">
+                <div class="welcome-icon-glow">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                </div>
+                <h2>OmniDocs AI Asistanına Hoş Geldiniz</h2>
+                <p>Şirket içi hassas dokümanlarınız yerel ortamdan dışarı çıkmadan (Zero Data Leak) analiz edilir. Sol taraftan istenilen bölümü seçin ve sorunuzu yöneltin.</p>
+                
+                <div class="quick-prompts">
+                  <div class="quick-prompt-label">Örnek Hızlı Sorular:</div>
+                  <div class="prompt-chips">
+                    <button class="prompt-chip" data-query="Dokümanda geçen temel konu ve ana tanım nedir?">
+                      📄 Dokümanın ana konusunu özetle
+                    </button>
+                    <button class="prompt-chip" data-query="Dokümanda geçen önemli kural, yükümlülük veya şartlar nelerdir?">
+                      ⚖️ Önemli kurallar ve yükümlülükler
+                    </button>
+                    <button class="prompt-chip" data-query="Metinde geçen phrasal verbler ve anlamları nelerdir?">
+                      🔍 Geçen özel terim ve ifadeler
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Box -->
+            <div class="chat-input-wrapper">
+              <div class="input-container">
+                <textarea 
+                  id="chat-input" 
+                  placeholder="Seçilen bölümdeki dokümanlar hakkında soru sorun... (Shift + Enter: Alt Satır, Enter: Gönder)" 
+                  rows="1"
+                ></textarea>
+                <div class="input-controls">
+                  <div class="input-meta">
+                    <span class="meta-item">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                      Top-3 ReRanked
+                    </span>
+                    <span class="meta-item">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                      Lokal & Şifreli
+                    </span>
+                  </div>
+                  <button id="btn-send-query" class="btn-send">
+                    <span>Sor</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2: PDF YÜKLE & BÖLÜMLE ==================== -->
+        <section class="tab-pane" id="tab-upload">
+          <div class="upload-view-container">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Akıllı PDF İndeksleme & Bölümleme</h2>
+                <p>PDF belgelerinizi yükleyin, istenilen bölüm/departmanı belirleyin ve gelişmiş semantik vektörleştirmeyi başlatın.</p>
+              </div>
+            </div>
+
+            <div class="upload-grid">
+              <!-- Left Column: Dropzone & File Pick -->
+              <div class="card upload-card">
+                <div class="card-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                  <span>1. PDF Belgesi Seçimi</span>
+                </div>
+
+                <div class="dropzone" id="pdf-dropzone">
+                  <input type="file" id="file-input-native" accept=".pdf" style="display:none;">
+                  <div class="dropzone-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                      <path d="M12 12v9"></path>
+                      <path d="m16 16-4-4-4 4"></path>
+                    </svg>
+                  </div>
+                  <div class="dropzone-text">
+                    <strong>PDF Dosyasını Buraya Sürükleyin</strong>
+                    <span>veya bilgisayarınızdan seçmek için tıklayın</span>
+                  </div>
+                  <div class="dropzone-btn-group">
+                    <button type="button" class="btn-secondary" id="btn-browse-file">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                      </svg>
+                      Dosya Seç
+                    </button>
+                    <button type="button" class="btn-ghost-sm" id="btn-use-sample">
+                      📄 Örnek PDF'i Kullan (sample.pdf)
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Selected File Display -->
+                <div class="selected-file-preview" id="selected-file-card" style="display:none;">
+                  <div class="file-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                  </div>
+                  <div class="file-info">
+                    <div class="file-name" id="preview-file-name">sample.pdf</div>
+                    <div class="file-meta">
+                      <span id="preview-file-size">1.2 MB</span> • 
+                      <span id="preview-file-pages">Hesaplanıyor...</span>
+                    </div>
+                  </div>
+                  <button class="icon-btn-danger" id="btn-remove-selected-file" title="Kaldır">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right Column: Section & Segmentation Settings -->
+              <div class="card config-card">
+                <div class="card-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                  <span>2. İstenilen Bölüm & Hedef Ayarları</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="select-target-dept">
+                    <span>Hedef Departman / Şirket (Tenant)</span>
+                    <span class="required">*</span>
+                  </label>
+                  <div class="input-with-button">
+                    <select id="select-target-dept" class="form-select">
+                      <option value="company_test">Genel Kurumsal (company_test)</option>
+                      <option value="hukuk">Hukuk & Mevzuat Departmanı (hukuk)</option>
+                      <option value="finans">Finans & Muhasebe (finans)</option>
+                      <option value="arge">Ar-Ge & Teknik Dokümanlar (arge)</option>
+                      <option value="ik">İnsan Kaynakları & Personel (ik)</option>
+                      <option value="custom">+ Yeni Özel Bölüm Tanımla...</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Custom Tenant input (hidden by default) -->
+                <div class="form-group" id="group-custom-dept" style="display:none;">
+                  <label for="input-custom-dept">Özel Bölüm / Tenant Kimliği</label>
+                  <input type="text" id="input-custom-dept" class="form-input" placeholder="Örn: siber_guvenlik">
+                </div>
+
+                <!-- Desired Section / Page Range Filter -->
+                <div class="form-group">
+                  <label for="select-section-mode">
+                    <span>İstenilen Bölüm Kapsamı</span>
+                  </label>
+                  <select id="select-section-mode" class="form-select">
+                    <option value="all">Tüm Doküman (Bütün Sayfalar)</option>
+                    <option value="pages">Belirli Sayfa Aralığı (Örn: 1-5 veya 3,7,9)</option>
+                    <option value="named">Özel Bölüm Adı / Etiketi ile İndeksle</option>
+                  </select>
+                </div>
+
+                <div class="form-group" id="group-page-range" style="display:none;">
+                  <label for="input-page-range">Sayfa Aralığı (Örn: 1-10 veya 2, 4, 6-8)</label>
+                  <input type="text" id="input-page-range" class="form-input" placeholder="1-5">
+                  <span class="field-hint">Yalnızca belirtilen sayfalardaki metinler parçalanır ve vektörleştirilir.</span>
+                </div>
+
+                <div class="form-group" id="group-section-name" style="display:none;">
+                  <label for="input-section-name">Bölüm / Kategori Etiketi</label>
+                  <input type="text" id="input-section-name" class="form-input" placeholder="Örn: Bölüm 4 - Finansal Tablolar">
+                  <span class="field-hint">Arama sırasında bu etikete göre de filtreleme yapabilirsiniz.</span>
+                </div>
+
+                <!-- Chunking Settings Toggle -->
+                <div class="advanced-settings-toggle" id="btn-toggle-advanced">
+                  <span>Gelişmiş Chunking Ayarları</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+
+                <div class="advanced-settings-panel" id="advanced-settings-panel" style="display:none;">
+                  <div class="grid-2-col">
+                    <div class="form-group">
+                      <label for="input-chunk-size">Parça Boyutu (Kelime)</label>
+                      <input type="number" id="input-chunk-size" class="form-input" value="500" min="100" max="2000" step="50">
+                    </div>
+                    <div class="form-group">
+                      <label for="input-chunk-overlap">Örtüşme (Overlap)</label>
+                      <input type="number" id="input-chunk-overlap" class="form-input" value="100" min="0" max="500" step="20">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Start Action -->
+                <div class="upload-action-box">
+                  <button class="btn-primary-glow" id="btn-start-ingest" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>Vektör Veritabanına İndeksle</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ingestion Live Progress Card -->
+            <div class="card progress-card" id="ingest-progress-card" style="display:none;">
+              <div class="progress-header">
+                <div class="progress-title-group">
+                  <div class="spinner-small" id="progress-spinner"></div>
+                  <h4 id="progress-status-title">İndeksleme İşlemi Başlatıldı...</h4>
+                </div>
+                <span class="progress-pct" id="progress-pct-val">0%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+              </div>
+              <div class="progress-steps-list">
+                <div class="step-item" id="step-1">
+                  <span class="step-badge">1</span>
+                  <span>PDF Metinleri Çıkarılıyor (PyMuPDF)</span>
+                </div>
+                <div class="step-item" id="step-2">
+                  <span class="step-badge">2</span>
+                  <span>Semantik Parçalama (Chunking & Overlap)</span>
+                </div>
+                <div class="step-item" id="step-3">
+                  <span class="step-badge">3</span>
+                  <span>Vektör Embedding Üretimi (all-MiniLM-L6-v2)</span>
+                </div>
+                <div class="step-item" id="step-4">
+                  <span class="step-badge">4</span>
+                  <span>Qdrant Vektör Tabanına Kayıt & İndeksleme</span>
+                </div>
+              </div>
+              <div class="progress-result-box" id="progress-result-box" style="display:none;">
+                <!-- Result summary -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 3: VEKTÖR & PARÇA GEZGİNİ ==================== -->
+        <section class="tab-pane" id="tab-search">
+          <div class="search-view-container">
+            <div class="view-header">
+              <div class="view-title-group">
+                <h2>Vektör Veritabanı & Cross-Encoder Gezgini</h2>
+                <p>Ollama cevabı oluşturmadan önce ham Qdrant benzerlik sonuçlarını ve Cross-Encoder reranking puanlarını inceleyin.</p>
+              </div>
+            </div>
+
+            <div class="search-bar-box">
+              <div class="search-input-field">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="raw-search-input" placeholder="Semantik vektör araması yapılacak soruyu veya anahtar kelimeleri girin...">
+              </div>
+              <button class="btn-primary" id="btn-raw-search">
+                Adayları Ara & Sırala
+              </button>
+            </div>
+
+            <div class="search-results-area" id="raw-search-results">
+              <div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <p>Bir sorgu girerek Qdrant dense vector ve Cross-Encoder puanlarını canlı inceleyin.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal: New Section / Department -->
+  <div class="modal-backdrop" id="modal-new-section" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Yeni Bölüm / Departman Ekle</h3>
+        <button class="icon-btn-subtle" id="btn-close-modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="modal-input-name">Bölüm Adı</label>
+          <input type="text" id="modal-input-name" class="form-input" placeholder="Örn: İnsan Kaynakları">
+        </div>
+        <div class="form-group">
+          <label for="modal-input-id">Bölüm Kimliği (Tenant ID - İngilizce / Küçük Harf)</label>
+          <input type="text" id="modal-input-id" class="form-input" placeholder="Örn: insan_kaynaklari">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-cancel-modal">İptal</button>
+        <button class="btn-primary" id="btn-save-modal">Bölümü Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Modal -->
+  <div class="modal-backdrop" id="modal-doc-preview" style="display:none;">
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h3 id="modal-preview-title">Doküman Detayları</h3>
+        <button class="icon-btn-subtle" id="btn-close-doc-modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-preview-body">
+        <!-- Content -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
